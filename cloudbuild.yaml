@@ -1,0 +1,129 @@
+# Copyright 2021 Google LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+steps:
+- name: gcr.io/cloud-builders/git
+  args:
+  - '-c'
+  - |
+    git clone https://$${github_user}:$${github_token}@github.com/$${github_org}/$${env_repo} /workspace/config
+    cd /workspace/config
+    sed -i s:KUSTOMIZE_BASE_PATH:../../kustomize-base/golang:g k8s/*/kustomization.yaml
+    sed -i s/APP_NAME/$${app_name}/g k8s/*/kustomization.yaml
+    git config --global user.name $${github_user}
+    git config --global user.email $${github_email}
+    git add k8s/*
+    git commit -m "Cloud Build: Adding config data to environment files"
+    git push origin
+    cd /workspace
+    rm -rf config
+    ls -lrt
+  id: update-config-repo
+  entrypoint: bash
+  secretEnv: [ 'github_user','github_email','github_token','github_org','env_repo','dev_gke_cluster','staging_gke_cluster','prod_gke_cluster','clouddeploy_sa','app_name' ]
+
+- name: gcr.io/cloud-builders/git
+  args:
+  - '-c'
+  - |
+    git config --global url."https://$${github_user}:$${github_token}@github.com".insteadOf "https://github.com"
+    sed -ri  "s?^(\s*)(cluster\s*:\s*.*)?\1cluster: $${dev_gke_cluster}?" deploy/dev.yaml
+    sed -ri  "s?^(\s*)(cluster\s*:\s*.*)?\1cluster: $${staging_gke_cluster}?" deploy/staging.yaml
+    sed -ri  "s?^(\s*)(cluster\s*:\s*.*)?\1cluster: $${prod_gke_cluster}?" deploy/prod.yaml
+    sed -ri  "s/^(\s*)(serviceAccount\s*:\s*.*)/\1serviceAccount: $${clouddeploy_sa}/" deploy/*.yaml
+    sed -ri  "s/^(\s*)(name\s*:\s*.*)/\1name: $${app_name}/" deploy/pipeline.yaml
+    sed -ri  "s/^(\s*)(app\s*:\s*.*)/\1app: $${app_name}/" deploy/pipeline.yaml
+    git config --global user.name $${github_user}
+    git config --global user.email $${github_email}
+    git add deploy/dev.yaml deploy/staging.yaml deploy/prod.yaml deploy/pipeline.yaml
+    git commit -m "Cloud Build: Adding config data to app files"
+    git push origin HEAD:main
+
+
+  id: update-app-repo
+  entrypoint: bash
+  secretEnv: ['github_user','github_email','github_token','github_org','env_repo','dev_gke_cluster','staging_gke_cluster','prod_gke_cluster','clouddeploy_sa','app_name']
+
+- name: gcr.io/cloud-builders/git
+  args:
+  - '-c'
+  - |
+    git clone https://$${github_user}:$${github_token}@github.com/$${github_org}/$${env_repo} config
+    mv config/k8s . && rm -rf config
+  id: copy-configs
+  entrypoint: bash
+  secretEnv: ['github_user','github_token','github_org','env_repo']
+
+
+- name: gcr.io/k8s-skaffold/skaffold
+  args:
+  - '-c'
+  - |
+    skaffold build --file-output=/workspace/artifacts.json \
+                           --default-repo gcr.io/$PROJECT_ID \
+                           --push=true
+  id: skaffold-build
+  entrypoint: bash
+
+- name: 'gcr.io/cloud-builders/gcloud'
+  args:
+  - '-xe'
+  - '-c'
+  - |
+    gcloud services enable clouddeploy.googleapis.com
+    gcloud config set deploy/region us-central1
+    gcloud beta deploy apply --file deploy/pipeline.yaml
+    gcloud beta deploy apply --file deploy/dev.yaml
+    gcloud beta deploy apply --file deploy/staging.yaml
+    gcloud beta deploy apply --file deploy/prod.yaml
+    gcloud beta deploy releases create "release-pipeline-$(date '+%Y%m%d%H%M%S')" \
+                               --delivery-pipeline=$$app_name \
+                               --description="First Release" \
+                               --build-artifacts=/workspace/artifacts.json \
+                               --annotations="release-id=rel-$(date '+%Y%m%d%H%M%S')"
+    gsutil iam ch serviceAccount:$$dev_gke_sa:objectViewer gs://artifacts.$PROJECT_ID.appspot.com
+    gsutil iam ch serviceAccount:$$staging_gke_sa:objectViewer gs://artifacts.$PROJECT_ID.appspot.com
+    gsutil iam ch serviceAccount:$$prod_gke_sa:objectViewer gs://artifacts.$PROJECT_ID.appspot.com
+  id: create-release
+  entrypoint: sh
+  secretEnv: ['staging_gke_sa','prod_gke_sa','dev_gke_sa','app_name']
+
+availableSecrets:
+  secretManager:
+  - versionName: projects/$PROJECT_ID/secrets/app-name/versions/latest
+    env: app_name
+  - versionName: projects/$PROJECT_ID/secrets/github-user/versions/latest
+    env: github_user
+  - versionName: projects/$PROJECT_ID/secrets/github-token/versions/latest
+    env: github_token
+  - versionName: projects/$PROJECT_ID/secrets/github-email/versions/latest
+    env: github_email
+  - versionName: projects/$PROJECT_ID/secrets/github-org/versions/latest
+    env: github_org
+  - versionName: projects/$PROJECT_ID/secrets/env-repo/versions/latest
+    env: env_repo
+  - versionName: projects/$PROJECT_ID/secrets/dev-gke-cluster-1/versions/latest
+    env: dev_gke_cluster
+  - versionName: projects/$PROJECT_ID/secrets/staging-gke-cluster-1/versions/latest
+    env: staging_gke_cluster
+  - versionName: projects/$PROJECT_ID/secrets/prod-gke-cluster-1/versions/latest
+    env: prod_gke_cluster
+  - versionName: projects/$PROJECT_ID/secrets/clouddeploy-sa/versions/latest
+    env: clouddeploy_sa
+  - versionName: projects/$PROJECT_ID/secrets/dev-gke-sa/versions/latest
+    env: dev_gke_sa
+  - versionName: projects/$PROJECT_ID/secrets/staging-gke-sa/versions/latest
+    env: staging_gke_sa
+  - versionName: projects/$PROJECT_ID/secrets/prod-gke-sa/versions/latest
+    env: prod_gke_sa
