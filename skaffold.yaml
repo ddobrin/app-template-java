@@ -41,3 +41,15 @@ profiles:
       kustomize:
         paths:
         - k8s/stg
+  # Profile used when rendering test manifests
+  - name: test
+    deploy:
+      kustomize:
+        paths:
+        - k8s/stg
+  # Profile used when rendering dev manifests
+  - name: dev
+    deploy:
+      kustomize:
+        paths:
+        - k8s/stg

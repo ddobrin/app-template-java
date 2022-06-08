@@ -21,9 +21,9 @@ metadata:
 description: delivery pipeline
 serialPipeline:
   stages:
-  - targetId: dev
+  - targetId: test
     profiles:
-    - dev
+    - test
   - targetId: staging
     profiles:
     - staging

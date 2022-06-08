@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM adoptopenjdk/openjdk13:jre-13.0.2_8-alpine
+FROM FROM openjdk:17-jdk
 COPY target/app.jar app.jar
 EXPOSE 8080
 CMD java -Dcom.sun.management.jmxremote -noverify ${JAVA_OPTS} -jar app.jar
