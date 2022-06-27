@@ -1,7 +1,6 @@
 # Overview
 
-This is a sample application written in Java. In most cases, this should not be used
-for development of a new application.
+This is a **template** sample application written in Java. It should be use as an app accelerator base template.
 
 ## Critical Files
 
@@ -12,8 +11,9 @@ an Anthos application.
 |:-------------:|:----------------------|-----------:|
 | Dockerfile :whale: |  File used to create the Docker image (built with kaniko) | :white_check_mark: |
 | skaffold.yaml |  Used in local development to keep development environment in sync with changes. If not using skaffold, this file is optional (but recommended) |  :white_large_square: |
-| .gitlab-ci.yml | CICD Pipeline setup to build to inherit the conventions for the development organization/ecosystem | :white_check_mark: |
-| k8s/ | Folder containing the Kubernetes resource manifests for "dev", "stage" and "prod". Resource files are configured to use Kustomize during the CICD build. | :white_check_mark: |
+| build/ | CI/CD Pipeline setup to build to inherit the conventions for the development organization/ecosystem | :white_check_mark: |
+| deploy/ | Cloud Build Deployment pipeline files | 
+| k8s/ | Folder containing the Kubernetes resource manifests for "test", "stage" and "prod". Resource files are configured to use Kustomize during the CICD build. | :white_check_mark: |
 
 ## Licensing
 

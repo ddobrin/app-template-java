@@ -30,18 +30,30 @@ spec:
         image: app
         resources:
           limits:
-            memory: "512Mi"
-            cpu: "500m"
+            memory: "1024Mi"
+            cpu: "1000m"
         env:
         - name: ENVIRONMENT
           value: base
         - name: LOG_LEVEL
           value: info
+        startupProbe:
+          httpGet:
+            path: /actuator/startup
+            port: liveness-port
+          failureThreshold: 30
+          periodSeconds: 10          
         readinessProbe:
           initialDelaySeconds: 1
           periodSeconds: 1
           httpGet:
-            path: /healthz
+            path: /actuator/health
+            port: 8080
+        livenessProbe:
+          initialDelaySeconds: 1
+          periodSeconds: 3
+          httpGet:
+            path: /actuator/health
             port: 8080
         ports:
         - name: http
