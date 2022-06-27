@@ -15,6 +15,15 @@ an Anthos application.
 | deploy/ | Cloud Build Deployment pipeline files | 
 | k8s/ | Folder containing the Kubernetes resource manifests for "test", "stage" and "prod". Resource files are configured to use Kustomize during the CICD build. | :white_check_mark: |
 
+## Placeholders to change
+
+| File/Folder | Placeholder name | Notes |
+|:-------------:|:----------------------|-----------:|
+| org | Organization name | n/a |
+| appname-package | application package | n/a |
+| appname-class | application main class name | n/a |
+| APP-NAME | placeholder in Yaml files | n/a |
+
 ## Licensing
 
 ```lang-none

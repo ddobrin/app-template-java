@@ -1,10 +1,10 @@
-package com.example.modernapp;
+package com.example.appname-package;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 
 @SpringBootTest
-class ModernappApplicationTests {
+class appname-classApplicationTests {
 
 	@Test
 	void contextLoads() {

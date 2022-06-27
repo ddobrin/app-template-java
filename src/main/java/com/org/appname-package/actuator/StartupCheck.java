@@ -24,14 +24,14 @@ public class StartupCheck {
     public CustomData customEndpoint() {
         Map<String, Object> details = new LinkedHashMap<>();
         if (!status) {
-            logger.info("modernapp Startup Endpoint: Application is ready to serve traffic !");
+            logger.info("appname-class Startup Endpoint: Application is ready to serve traffic !");
             return null;
         }
 
-        logger.info("modernapp Startup Endpoint: Application is ready to serve traffic !");
+        logger.info("appname-class Startup Endpoint: Application is ready to serve traffic !");
 
         CustomData data = new CustomData();
-        details.put("StartupEndpoint", "modernapp Startup Endpoint: Application is ready to serve traffic");
+        details.put("StartupEndpoint", "modeappname-classrnapp Startup Endpoint: Application is ready to serve traffic");
         data.setData(details);
 
         return data;

@@ -16,13 +16,13 @@ public class HealthCheck implements HealthIndicator {
         int errorCode = check(); // perform some specific health check
 
         if (errorCode != 0) {
-            logger.error("modernapp Application: failed health check with error code " + errorCode);
+            logger.error("appname-class Application: failed health check with error code " + errorCode);
             return Health.down()
                     .withDetail("Custom Health Check Status - failed. Error Code", errorCode).build();
         }
 
-        logger.info("modernapp Application: Custom Health Check - passed");
-        return Health.up().withDetail("modernapp Application: Custom Health Check Status ", "passed").build();
+        logger.info("appname-class Application: Custom Health Check - passed");
+        return Health.up().withDetail("appname-class Application: Custom Health Check Status ", "passed").build();
     }
 
     public int check() {
